@@ -9,7 +9,13 @@ Description:
     When given a DNA multi-FASTA file, this script will translate the DNA 
     sequences into RNA sequences and then translate the generated RNA
     sequences into amino acid sequences, which will be printed into a new 
-    multi-FASTA file.
+    multi-FASTA file. Stop codons are represented with '*' in the amino acid 
+    sequence.
+    
+    This application can handle the input of any DNA FASTA file; the letters
+    can be uppercase or lowercase. If the application comes across a codon that
+    it does not recognize (for instance, CNC or AXG) then it will return 'X' as
+    the amino acid code.
 
 List of user-defined functions:
     convert_DNA_to_RNA(fasta): converts a DNA FASTA file into an RNA FASTA in
@@ -26,17 +32,24 @@ List of non-standard modules:
 Procedure:
     1. Create a dictionary using RNA codons as keys and amino acid single-letter
     codes as values.
-    2. Convert inputted multi-line DNA FASTA to single-line RNA FASTA.
-    3. Use dictionary to translate RNA FASTA to protein FASTA.
-    4. Save protein FASTA to output file.
+    2. Convert all Ts to Us in the DNA sequence of interest to create RNA.
+    3. Put the individual RNA sequences together into single-line FASTAs.
+    4. Turn each RNA sequence into a list of codons and translate to protein
+    by using the dictionary.
+    5. Put all the pieces together and generate a protein FASTA file.
 
 Usage:
     ./dna2aa.py sequences.fna output.faa
 """
-import sys
-# Step 1: Create dictionary with mRNA codons as keys and amino acid 1-letter 
-# codes as values
+#%% Setup
 
+import sys
+
+fasta = sys.argv[1]
+output = sys.argv[2]
+
+#%% Step 1: Create dictionary with RNA codons as keys and amino acid single-letter 
+#   codes as values
 Translator = {
     'AAA':'K',
     'AAU':'N',
@@ -104,11 +117,7 @@ Translator = {
     'GAC':'D'
     }
 
-
-# Step 2: Convert all Ts to Us in the DNA sequence of interest
-
-fasta = sys.argv[1]
-output = sys.argv[2]
+#%% Step 2: Convert all Ts to Us in the DNA sequence of interest to generate RNA.
 
 def convert_DNA_to_RNA(fasta):
     rnaFasta = []
@@ -121,10 +130,10 @@ def convert_DNA_to_RNA(fasta):
             rnaFasta.append(line)
     return rnaFasta
 
+#%% Step 3: Put the individual RNA sequences together into single-line FASTAs.
+
 def collate_FASTA(fastalist):
-    #First, get rid of the "a" variable to eliminate future problems
     if 'a' in locals(): del a
-    #Then, define an empty list to populate your new strings with
     newFasta = []
     for line in fastalist:
         if line.startswith('>') == False and 'a' not in locals():
@@ -139,6 +148,9 @@ def collate_FASTA(fastalist):
             newFasta.append(line)
     if 'a' in locals(): newFasta.append(a)
     return newFasta
+
+#%% Step 4: Turn each RNA sequence into a list of codons and translate to protein
+#   by using the dictionary.
 
 def convert_RNA_to_protein(newFasta):
     proteinFasta = []
@@ -157,10 +169,12 @@ def convert_RNA_to_protein(newFasta):
             proteinFasta.append(line)
     return proteinFasta
 
+#%% Step 5: Put all the pieces together and generate a protein FASTA file.
+
 RNA = convert_DNA_to_RNA(fasta)
 RNA_single = collate_FASTA(RNA)
 Protein = convert_RNA_to_protein(RNA_single)
-        
+
 with open(output,'w') as o:
     for line in Protein:
         o.write(line + '\n')
