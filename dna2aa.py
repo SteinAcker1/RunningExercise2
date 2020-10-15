@@ -1,9 +1,37 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Oct 15 11:37:30 2020
+Title: dna2aa.py
+Author: Stein Acker
+Date: 15-10-2020
 
-@author: steinacker
+Description:
+    When given a DNA multi-FASTA file, this script will translate the DNA 
+    sequences into RNA sequences and then translate the generated RNA
+    sequences into amino acid sequences, which will be printed into a new 
+    multi-FASTA file.
+
+List of user-defined functions:
+    convert_DNA_to_RNA(fasta): converts a DNA FASTA file into an RNA FASTA in
+    Python list format
+    collate_FASTA(fastalist): eliminates newlines from sequences in FASTA files
+    in Python list format
+    convert_RNA_to_protein(newFasta): converts an RNA FASTA in Python list 
+    format to a protein FASTA in Python list format
+
+List of non-standard modules:
+    sys: Allows python script to easily interface with bash commands in a
+    terminal.
+
+Procedure:
+    1. Create a dictionary using RNA codons as keys and amino acid single-letter
+    codes as values.
+    2. Convert inputted multi-line DNA FASTA to single-line RNA FASTA.
+    3. Use dictionary to translate RNA FASTA to protein FASTA.
+    4. Save protein FASTA to output file.
+
+Usage:
+    ./dna2aa.py sequences.fna output.faa
 """
 import sys
 # Step 1: Create dictionary with mRNA codons as keys and amino acid 1-letter 
@@ -78,57 +106,61 @@ Translator = {
 
 
 # Step 2: Convert all Ts to Us in the DNA sequence of interest
-rnaFasta = []
-newFasta = []
 
 fasta = sys.argv[1]
 output = sys.argv[2]
-if 'a' in locals():
-    del a
-with open(fasta) as f:
-    for line in f:
-        line = line.strip('\n')
+
+def convert_DNA_to_RNA(fasta):
+    rnaFasta = []
+    with open(fasta) as f:
+        for line in f:
+            line = line.strip('\n')
+            if line.startswith('>') == False:
+                line = line.upper()
+                line = line.replace('T','U')
+            rnaFasta.append(line)
+    return rnaFasta
+
+def collate_FASTA(fastalist):
+    #First, get rid of the "a" variable to eliminate future problems
+    if 'a' in locals(): del a
+    #Then, define an empty list to populate your new strings with
+    newFasta = []
+    for line in fastalist:
+        if line.startswith('>') == False and 'a' not in locals():
+            a = line
+        elif line.startswith('>') == False and 'a' in locals():
+            a = a + line
+        elif line.startswith('>') == True and 'a' in locals():
+            newFasta.append(a)
+            newFasta.append(line)
+            del a
+        else:
+            newFasta.append(line)
+    if 'a' in locals(): newFasta.append(a)
+    return newFasta
+
+def convert_RNA_to_protein(newFasta):
+    proteinFasta = []
+    for line in newFasta:
         if line.startswith('>') == False:
-            line = line.upper()
-            line = line.replace('T','U')
-        rnaFasta.append(line)
+            line = ','.join([line[i:i+3] for i in range(0, len(line),3)])
+            line = line.split(',')
+            protein = ''
+            for codon in line:
+                if len(codon) == 3 and codon in Translator.keys():
+                    protein += Translator[codon]
+                elif len(codon) == 3:
+                    protein += 'X'
+            proteinFasta.append(protein)
+        else:
+            proteinFasta.append(line)
+    return proteinFasta
 
-for line in rnaFasta:
-    if line.startswith('>') == False and 'a' not in locals():
-        a = line
-    elif line.startswith('>') == False and 'a' in locals():
-        a = a + line
-    elif line.startswith('>') == True and 'a' in locals():
-        newFasta.append(a)
-        newFasta.append(line)
-        del a
-    else:
-        newFasta.append(line)
-
-proteinFasta = []
-
-for line in newFasta:
-    if line.startswith('>') == False:
-        line = ','.join([line[i:i+3] for i in range(0, len(line),3)])
-        line = line.split(',')
-        protein = ''
-        for codon in line:
-            if len(codon) == 3 and codon in Translator.keys():
-                protein += Translator[codon]
-            elif len(codon) == 3:
-                protein += 'X'
-        proteinFasta.append(protein)
-    else:
-        proteinFasta.append(line)
+RNA = convert_DNA_to_RNA(fasta)
+RNA_single = collate_FASTA(RNA)
+Protein = convert_RNA_to_protein(RNA_single)
         
 with open(output,'w') as o:
-    for line in proteinFasta:
+    for line in Protein:
         o.write(line + '\n')
-
-# Step 3: Strip off all unnecessary newlines from FASTA
-
-# Step 4: Convert each sequence to a list with codons as units
-
-# Step 5: Create new list
-
-# Step 6: Use the dictionary to convert each 
