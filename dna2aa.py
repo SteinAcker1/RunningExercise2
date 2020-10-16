@@ -123,7 +123,9 @@ def convert_DNA_to_RNA(fasta):
     rnaFasta = []
     with open(fasta) as f:
         for line in f:
+            #Eliminate all newlines from file
             line = line.strip('\n')
+            #If the line is not a header, make the whole line uppercase and replace T with U
             if line.startswith('>') == False:
                 line = line.upper()
                 line = line.replace('T','U')
@@ -133,20 +135,26 @@ def convert_DNA_to_RNA(fasta):
 #%% Step 3: Put the individual RNA sequences together into single-line FASTAs.
 
 def collate_FASTA(fastalist):
-    if 'a' in locals(): del a
+    if 'collate' in locals(): del a
     newFasta = []
     for line in fastalist:
-        if line.startswith('>') == False and 'a' not in locals():
-            a = line
-        elif line.startswith('>') == False and 'a' in locals():
-            a = a + line
-        elif line.startswith('>') == True and 'a' in locals():
-            newFasta.append(a)
+        #If the line is not a header and there is no collated line yet, equate "collate" with the line
+        if line.startswith('>') == False and 'collate' not in locals():
+            collate = line
+        #If the line is not a header and there is a collated line, then add the line to "collate"
+        elif line.startswith('>') == False and 'collate' in locals():
+            collate += line
+        #If the line is a header and the "collate" variable exists, then append the completed collated line and append the header right under.
+        #Then, delete the "collate" variable to prepare for the next loop.
+        elif line.startswith('>') == True and 'collate' in locals():
+            newFasta.append(collate)
             newFasta.append(line)
-            del a
+            del collate
+        #Otherwise (and this only applies to the first header in the file), just append the line
         else:
             newFasta.append(line)
-    if 'a' in locals(): newFasta.append(a)
+    #After all this is done, append the last collated line to complete the FASTA
+    if 'collate' in locals(): newFasta.append(collate)
     return newFasta
 
 #%% Step 4: Turn each RNA sequence into a list of codons and translate to protein
@@ -155,13 +163,16 @@ def collate_FASTA(fastalist):
 def convert_RNA_to_protein(newFasta):
     proteinFasta = []
     for line in newFasta:
+        #If the line is not a header, then break it up into codons and translate into protein
         if line.startswith('>') == False:
             line = ','.join([line[i:i+3] for i in range(0, len(line),3)])
             line = line.split(',')
             protein = ''
             for codon in line:
-                if len(codon) == 3 and codon in Translator.keys():
+                #If the codon is in the Translator dictionary, then convert it to an amino acid
+                if codon in Translator.keys():
                     protein += Translator[codon]
+                #Otherwise, if the codon is 3 bases long but does not appear in the dictionary, add an X to the protein
                 elif len(codon) == 3:
                     protein += 'X'
             proteinFasta.append(protein)
