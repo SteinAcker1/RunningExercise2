@@ -62,6 +62,11 @@ def fasta_to_line(fasta):
 
 #Run this function on the inputted FASTA file.
 with open(input_file) as f:
+    #An error is returned if the first line does not start with >, as would be
+    #expected of a FASTA file
+    if f.readline().startswith('>') == False:
+        print('A valid FASTA file is required')
+        sys.exit()
     protein = fasta_to_line(f)
 
 #%% Step 3: Iterate through the amino acid list and sum up the counts of these

@@ -14,8 +14,8 @@ Description:
     
     This application can handle the input of any DNA FASTA file; the letters
     can be uppercase or lowercase. If the application comes across a codon that
-    it does not recognize (for instance, CNC or AXG) then it will return 'X' as
-    the amino acid code.
+    it does not recognize (for instance, CNC or AXG) then it will return an 
+    error.
 
 List of user-defined functions:
     convert_DNA_to_RNA(fasta): converts a DNA FASTA file into an RNA FASTA in
@@ -47,6 +47,7 @@ import sys
 
 fasta = sys.argv[1]
 output = sys.argv[2]
+
 
 #%% Step 1: Create dictionary with RNA codons as keys and amino acid single-letter 
 #   codes as values
@@ -122,6 +123,11 @@ Translator = {
 def convert_DNA_to_RNA(fasta):
     rnaFasta = []
     with open(fasta) as f:
+        #An error is returned if the first line does not start with >, as would be
+        #expected of a FASTA file
+        if f.readline().startswith('>') == False:
+            print('A valid FASTA file is required')
+            sys.exit()
         for line in f:
             #Eliminate all newlines from file
             line = line.strip('\n')
@@ -169,13 +175,16 @@ def convert_RNA_to_protein(newFasta):
             line = line.split(',')
             protein = ''
             for codon in line:
-                #If the codon is in the Translator dictionary, then convert it to an amino acid
-                if codon in Translator.keys():
-                    protein += Translator[codon]
-                #Otherwise, if the codon is 3 bases long but does not appear in the dictionary, add an X to the protein
-                elif len(codon) == 3:
-                    protein += 'X'
+                #If the codon is 3 bases long and in the Translator dictionary, then convert it to an amino acid
+                if len(codon) == 3:
+                    try:
+                        protein += Translator[codon]
+                    #If not, return an error
+                    except KeyError:
+                        print("Please ensure your input FASTA file contains only the nucleotides ACTG or ACUG and try again")
+                        sys.exit()
             proteinFasta.append(protein)
+        #If the line is just a header, add it to the proteinFasta without modification
         else:
             proteinFasta.append(line)
     return proteinFasta

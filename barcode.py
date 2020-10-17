@@ -28,16 +28,26 @@ Usage:
 #%% Setup
 
 import sys
-fastq = sys.argv[1]
-sample1 = sys.argv[2]
-sample2 = sys.argv[3]
-sample3 = sys.argv[4]
-undef = sys.argv[5]
+
+try:
+    fastq = sys.argv[1]
+    sample1 = sys.argv[2]
+    sample2 = sys.argv[3]
+    sample3 = sys.argv[4]
+    undef = sys.argv[5]
+except IndexError:
+    print("1 input FASTQ file and 4 output filenames are required")
+    sys.exit()
 
 #%% Step 1: Generate a list of FASTQ data tuples in list format.
 
 newFastq = []
 with open(fastq,'r') as f:
+    #An error is returned if the first line does not start with @, as would be
+    #expected of a FASTQ file
+    if f.readline().startswith('@') == False:
+        print('A valid input FASTQ file is required; other formats will not work')
+        sys.exit()
     for line in f:
         #If the line marks the start of a header...
         if line.startswith('@'):
@@ -52,7 +62,6 @@ with open(fastq,'r') as f:
                 newFastq.append((line,sequence,plus,quality))
             
 #%% Step 2: Separate these sequences into their respective FASTQ files.
-
 with open(sample1, 'w') as s1, open(sample2, 'w') as s2, open(sample3, 'w') as s3, open(undef, 'w') as u:
     for line in newFastq:
         #For each piece of FASTQ data, the program checks if the barcode shows
