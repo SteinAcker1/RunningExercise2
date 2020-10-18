@@ -43,11 +43,6 @@ except IndexError:
 
 newFastq = []
 with open(fastq,'r') as f:
-    #An error is returned if the first line does not start with @, as would be
-    #expected of a FASTQ file
-    if f.readline().startswith('@') == False:
-        print('A valid input FASTQ file is required; other formats will not work')
-        sys.exit()
     for line in f:
         #If the line marks the start of a header...
         if line.startswith('@'):
@@ -60,6 +55,11 @@ with open(fastq,'r') as f:
             #used as a quality marker and mistaking it for a new header.
             if plus == '+\n': 
                 newFastq.append((line,sequence,plus,quality))
+    #An error is returned if the first line does not start with @, as would be
+    #expected of a FASTQ file
+    if newFastq[0][0].startswith('@') == False:
+        print('A valid input FASTQ file is required; other formats will not work')
+        sys.exit()
             
 #%% Step 2: Separate these sequences into their respective FASTQ files.
 with open(sample1, 'w') as s1, open(sample2, 'w') as s2, open(sample3, 'w') as s3, open(undef, 'w') as u:

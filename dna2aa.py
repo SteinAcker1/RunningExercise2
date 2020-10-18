@@ -123,11 +123,6 @@ Translator = {
 def convert_DNA_to_RNA(fasta):
     rnaFasta = []
     with open(fasta) as f:
-        #An error is returned if the first line does not start with >, as would be
-        #expected of a FASTA file
-        if f.readline().startswith('>') == False:
-            print('A valid FASTA file is required')
-            sys.exit()
         for line in f:
             #Eliminate all newlines from file
             line = line.strip('\n')
@@ -136,12 +131,18 @@ def convert_DNA_to_RNA(fasta):
                 line = line.upper()
                 line = line.replace('T','U')
             rnaFasta.append(line)
+        #An error is returned if the first line does not start with >, as would be
+        #expected of a FASTA file
+        if rnaFasta[0].startswith('>') == False:
+            print('A valid FASTA file is required')
+            sys.exit()
     return rnaFasta
 
 #%% Step 3: Put the individual RNA sequences together into single-line FASTAs.
 
 def collate_FASTA(fastalist):
-    if 'collate' in locals(): del a
+    if 'collate' in locals():
+        del collate
     newFasta = []
     for line in fastalist:
         #If the line is not a header and there is no collated line yet, equate "collate" with the line
